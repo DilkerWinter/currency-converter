@@ -96,7 +96,6 @@ func Menu() {
   var err error
 
   action := func() {
-    time.Sleep(2 * time.Second)
     result, err = controller.CurrencyConverter(amount, currencyToBeConverted, currencyToConvert)
     if err != nil {
         fmt.Println("Error during conversion:", err)
