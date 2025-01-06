@@ -2,7 +2,11 @@ package menu
 
 import (
 	"fmt"
+  "time"
+  "os"
+  "strings"
 	"github.com/charmbracelet/huh"
+  "github.com/charmbracelet/huh/spinner"
 	"currency-converter/cmd/interface/utils"
 	"strconv"
 )
@@ -14,7 +18,7 @@ func Menu() {
 	var theme *huh.Theme = catppuccin
 
 	var currencyToBeConverted string
-	var currencyToConvert string
+	var currencyToConvert []string
 	var amountInput string
 	var amount float64 
 
@@ -34,14 +38,21 @@ func Menu() {
 		return
 	}
 
-	selectCurrencyDestiny := huh.NewSelect[string]().
+	selectCurrencyDestiny := huh.NewMultiSelect[string]().
 		Title("Choose the currency to convert to").
+    Description("Press X to select one or more currencies and press enter to confirm.").
 		Options(
 			huh.NewOption("BRL - Real", "BRL"),
 			huh.NewOption("USD - Dollar", "USD"),
 			huh.NewOption("EUR - Euro", "EUR"),
 			huh.NewOption("JPY - Yen", "JPY"),
 		).
+    Validate(func(c []string) error{
+      if len(c) <= 0 {
+        return fmt.Errorf("Select at least one currency to convert")
+      }
+      return nil
+    }).
 		Value(&currencyToConvert).
 		WithTheme(theme)
 
@@ -53,7 +64,7 @@ func Menu() {
 	
 for {
 	selectAmountToConvert := huh.NewInput().
-		Title("Insert the amount of money to convert to: " + currencyToConvert).
+		Title("Insert the amount of money to convert to: " + strings.Join(currencyToConvert , ", ")).
 		Placeholder("Ex: 252.39").
 		Description("Amount in " + currencyToBeConverted).
 		Value(&amountInput).
@@ -76,8 +87,22 @@ for {
 		break 
 	}
 }
+  
+  action := func ()  {
+    time.Sleep(10 * time.Second)
+  }
+  
+  
+  if err := spinner.New().
+  Title(fmt.Sprintf("Converting %s %.2f to: %s", utils.ConvertCurrencyToSimbol(currencyToBeConverted), amount, strings.Join(currencyToConvert, " | "))).
+    Action(action).
+    Run(); err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+  } 
 
-	fmt.Println("Selected currency to be converted:", currencyToBeConverted)
-	fmt.Println("Selected currency to convert to:", currencyToConvert)
-	fmt.Printf("Amount to convert: %s %.2f\n", utils.ConvertCurrencyToSimbol(currencyToConvert), amount)
+
+	//fmt.Println("Selected currency to be converted:", currencyToBeConverted)
+	//fmt.Println("Selected currency to convert to:", currencyToConvert)
+	//fmt.Printf("Amount to convert: %s %.2fn", utils.ConvertCurrencyToSimbol(currencyToConvert), amount)
 }
