@@ -1,13 +1,15 @@
+
 package menu
 
 import (
 	"fmt"
-  "time"
-  "os"
-  "strings"
+	"time"
+	"os"
+	"strings"
 	"github.com/charmbracelet/huh"
-  "github.com/charmbracelet/huh/spinner"
+	"github.com/charmbracelet/huh/spinner"
 	"currency-converter/cmd/interface/utils"
+	"currency-converter/cmd/controller"
 	"strconv"
 )
 
@@ -20,7 +22,7 @@ func Menu() {
 	var currencyToBeConverted string
 	var currencyToConvert []string
 	var amountInput string
-	var amount float64 
+	var amount float64
 
 	selectCurrency := huh.NewSelect[string]().
 		Title("Choose a currency to be converted").
@@ -40,19 +42,19 @@ func Menu() {
 
 	selectCurrencyDestiny := huh.NewMultiSelect[string]().
 		Title("Choose the currency to convert to").
-    Description("Press X to select one or more currencies and press enter to confirm.").
+		Description("Press X to select one or more currencies and press enter to confirm.").
 		Options(
 			huh.NewOption("BRL - Real", "BRL"),
 			huh.NewOption("USD - Dollar", "USD"),
 			huh.NewOption("EUR - Euro", "EUR"),
 			huh.NewOption("JPY - Yen", "JPY"),
 		).
-    Validate(func(c []string) error{
-      if len(c) <= 0 {
-        return fmt.Errorf("Select at least one currency to convert")
-      }
-      return nil
-    }).
+		Validate(func(c []string) error {
+			if len(c) <= 0 {
+				return fmt.Errorf("Select at least one currency to convert")
+			}
+			return nil
+		}).
 		Value(&currencyToConvert).
 		WithTheme(theme)
 
@@ -61,48 +63,59 @@ func Menu() {
 		return
 	}
 
+	for {
+		selectAmountToConvert := huh.NewInput().
+			Title("Insert the amount of money to convert to: " + strings.Join(currencyToConvert, ", ")).
+			Placeholder("Ex: 252.39").
+			Description("Amount in " + currencyToBeConverted).
+			Value(&amountInput).
+			Validate(func(input string) error {
+				_, err := strconv.ParseFloat(input, 64)
+				if err != nil {
+					return fmt.Errorf("Invalid amount input. Please enter a valid number.")
+				}
+				return nil
+			})
+
+		if err := selectAmountToConvert.Run(); err != nil {
+			fmt.Println("Error during amount input:", err)
+			return
+		}
+
+		var err error
+		amount, err = strconv.ParseFloat(amountInput, 64)
+		if err == nil {
+			break
+		}
+	}
+
 	
-for {
-	selectAmountToConvert := huh.NewInput().
-		Title("Insert the amount of money to convert to: " + strings.Join(currencyToConvert , ", ")).
-		Placeholder("Ex: 252.39").
-		Description("Amount in " + currencyToBeConverted).
-		Value(&amountInput).
-		Validate(func(input string) error {
-			_, err := strconv.ParseFloat(input, 64)
-			if err != nil {
-				return fmt.Errorf("Invalid amount input. Please enter a valid number.")
-			}
-			return nil
-		})
 
-	if err := selectAmountToConvert.Run(); err != nil {
-		fmt.Println("Error during amount input:", err)
-		return
-	}
 
-	var err error
-	amount, err = strconv.ParseFloat(amountInput, 64)
-	if err == nil {
-		break 
-	}
+  var result controller.ConversionResult  
+  var err error
+
+  action := func() {
+    time.Sleep(2 * time.Second)
+    result, err = controller.CurrencyConverter(amount, currencyToBeConverted, currencyToConvert)
+    if err != nil {
+        fmt.Println("Error during conversion:", err)
+        return
+    }
 }
-  
-  action := func ()  {
-    time.Sleep(10 * time.Second)
-  }
-  
-  
+
   if err := spinner.New().
-  Title(fmt.Sprintf("Converting %s %.2f to: %s", utils.ConvertCurrencyToSimbol(currencyToBeConverted), amount, strings.Join(currencyToConvert, " | "))).
+    Title(fmt.Sprintf("Converting %s %.2f to: %s", utils.ConvertCurrencyToSimbol(currencyToBeConverted), amount, strings.Join(currencyToConvert, " | "))).
     Action(action).
     Run(); err != nil {
-    fmt.Println(err)
+    fmt.Println("Error during spinner:", err)
     os.Exit(1)
-  } 
+  }
 
-
-	//fmt.Println("Selected currency to be converted:", currencyToBeConverted)
-	//fmt.Println("Selected currency to convert to:", currencyToConvert)
-	//fmt.Printf("Amount to convert: %s %.2fn", utils.ConvertCurrencyToSimbol(currencyToConvert), amount)
+  ShowResults(result, currencyToBeConverted, amount)
 }
+
+
+
+
+
