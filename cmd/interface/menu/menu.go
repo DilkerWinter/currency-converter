@@ -3,7 +3,6 @@ package menu
 
 import (
 	"fmt"
-	"time"
 	"os"
 	"strings"
 	"github.com/charmbracelet/huh"
