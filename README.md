@@ -1,4 +1,4 @@
-# Currency Generator
+# Currency Converter
 
 ## 📖 Desciption
 
